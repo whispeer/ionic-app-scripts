@@ -10,8 +10,11 @@ import { CleanCssConfig, getCleanCssInstance } from './util/clean-css-factory';
 
 export function cleancss(context: BuildContext, configFile?: string) {
   const logger = new Logger('cleancss');
-  configFile = getUserConfigFile(context, taskInfo, configFile);
-  return workerClient.runWorker('cleancss', 'cleancssWorker', context, configFile).then(() => {
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
+
+  return Promise.all(configFiles.map((configPath) => {
+    return workerClient.runWorker('cleancss', 'cleancssWorker', context, configPath);
+  })).then(() => {
     logger.finish();
   }).catch(err => {
     throw logger.fail(err);
@@ -24,7 +27,7 @@ export function cleancssWorker(context: BuildContext, configFile: string): Promi
   const config: CleanCssConfig = fillConfigDefaults(configFile, taskInfo.defaultConfigFile);
   const srcFile = join(context.buildDir, config.sourceFileName);
   const destFilePath = join(context.buildDir, config.destFileName);
-  Logger.debug(`[Clean CSS] cleancssWorker: reading source file ${srcFile}`)
+  Logger.debug(`[Clean CSS] cleancssWorker: reading source file ${srcFile}`);
   return readFileAsync(srcFile).then(fileContent => {
     return runCleanCss(config, fileContent);
   }).then(minifiedContent => {

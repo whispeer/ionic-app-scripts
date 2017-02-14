@@ -14,17 +14,19 @@ const copyFilePathCache = new Map<string, CopyToFrom[]>();
 const FILTER_OUT_DIRS_FOR_CLEAN = ['{{WWW}}', '{{BUILD}}'];
 
 export function copy(context: BuildContext, configFile?: string) {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
   const logger = new Logger('copy');
 
-  return copyWorker(context, configFile)
-    .then(() => {
-      logger.finish();
-    })
-    .catch(err => {
-      throw logger.fail(err);
-    });
+  return Promise.all(configFiles.map((configPath) => {
+    return copyWorker(context, configPath);
+  }))
+  .then(() => {
+    logger.finish();
+  })
+  .catch(err => {
+    throw logger.fail(err);
+  });
 }
 
 export function copyWorker(context: BuildContext, configFile: string) {
@@ -69,7 +71,7 @@ export function copyWorker(context: BuildContext, configFile: string) {
 
 export function copyUpdate(changedFiles: ChangedFile[], context: BuildContext) {
   const logger = new Logger('copy update');
-  const configFile = getUserConfigFile(context, taskInfo, null);
+  const configFile = getUserConfigFile(context, taskInfo, null)[0];
   const copyConfig: CopyConfig = fillConfigDefaults(configFile, taskInfo.defaultConfigFile);
   const keys = Object.keys(copyConfig);
   const directoriesToCreate = new Set<string>();
@@ -247,8 +249,8 @@ export function copyConfigToWatchConfig(context: BuildContext): Watcher {
   if (!context) {
     context = generateContext(context);
   }
-  const configFile = getUserConfigFile(context, taskInfo, '');
-  const copyConfig: CopyConfig = fillConfigDefaults(configFile, taskInfo.defaultConfigFile);
+  const configFiles = getUserConfigFile(context, taskInfo, '');
+  const copyConfig: CopyConfig = fillConfigDefaults(configFiles[0], taskInfo.defaultConfigFile);
   let results: GlobObject[] = [];
   for (const key of Object.keys(copyConfig)) {
     const list = generateGlobTasks(copyConfig[key].src, {});

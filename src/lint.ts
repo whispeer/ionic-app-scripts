@@ -31,16 +31,20 @@ export function lintWorker(context: BuildContext, configFile: string) {
 
 export function lintUpdate(changedFiles: ChangedFile[], context: BuildContext) {
   const changedTypescriptFiles = changedFiles.filter(changedFile => changedFile.ext === '.ts');
-  return new Promise(resolve => {
-    // throw this in a promise for async fun, but don't let it hang anything up
-    const workerConfig: LintWorkerConfig = {
-      configFile: getUserConfigFile(context, taskInfo, null),
-      filePaths: changedTypescriptFiles.map(changedTypescriptFile => changedTypescriptFile.filePath)
-    };
+  const configFiles = getUserConfigFile(context, taskInfo, null);
 
-    runWorker('lint', 'lintUpdateWorker', context, workerConfig);
-    resolve();
-  });
+  return Promise.all(configFiles.map((configPath) => {
+    return new Promise(resolve => {
+      // throw this in a promise for async fun, but don't let it hang anything up
+      const workerConfig: LintWorkerConfig = {
+        configFile: configPath,
+        filePaths: changedTypescriptFiles.map(changedTypescriptFile => changedTypescriptFile.filePath)
+      };
+
+      runWorker('lint', 'lintUpdateWorker', context, workerConfig);
+      resolve();
+    });
+  }));
 }
 
 
@@ -119,7 +123,6 @@ function lintFile(context: BuildContext, program: ts.Program, filePath: string):
 
 function getLintConfig(context: BuildContext, configFile: string): Promise<string> {
   return new Promise((resolve, reject) => {
-    configFile = getUserConfigFile(context, taskInfo, configFile);
     if (!configFile) {
       configFile = join(context.rootDir, 'tslint.json');
     }

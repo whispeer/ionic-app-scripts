@@ -9,17 +9,18 @@ import * as uglify from 'uglify-js';
 
 
 export function uglifyjs(context: BuildContext, configFile?: string) {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
   const logger = new Logger('uglifyjs');
 
-  return runWorker('uglifyjs', 'uglifyjsWorker', context, configFile)
-    .then(() => {
-      logger.finish();
-    })
-    .catch(err => {
-      throw logger.fail(err);
-    });
+  return Promise.all(configFiles.map((configPath) => {
+    return runWorker('uglifyjs', 'uglifyjsWorker', context, configPath);
+  })).then(() => {
+    logger.finish();
+  })
+  .catch(err => {
+    throw logger.fail(err);
+  });
 }
 
 

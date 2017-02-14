@@ -24,19 +24,20 @@ const INCREMENTAL_BUILD_SUCCESS = 'incremental_build_success';
 let pendingPromises: Promise<any>[] = [];
 
 export function webpack(context: BuildContext, configFile: string) {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
   const logger = new Logger('webpack');
 
-  return webpackWorker(context, configFile)
-    .then(() => {
-      context.bundleState = BuildState.SuccessfulBuild;
-      logger.finish();
-    })
-    .catch(err => {
-      context.bundleState = BuildState.RequiresBuild;
-      throw logger.fail(err);
-    });
+  return Promise.all(configFiles.map((configPath) => {
+    return webpackWorker(context, configPath);
+  })).then(() => {
+    context.bundleState = BuildState.SuccessfulBuild;
+    logger.finish();
+  })
+  .catch(err => {
+    context.bundleState = BuildState.RequiresBuild;
+    throw logger.fail(err);
+  });
 }
 
 
@@ -176,8 +177,6 @@ function startWebpackWatch(context: BuildContext, config: WebpackConfig) {
 }
 
 export function getWebpackConfig(context: BuildContext, configFile: string): WebpackConfig {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
-
   let webpackConfig: WebpackConfig = fillConfigDefaults(configFile, taskInfo.defaultConfigFile);
   webpackConfig.entry = replacePathVars(context, webpackConfig.entry);
   webpackConfig.output.path = replacePathVars(context, webpackConfig.output.path);
