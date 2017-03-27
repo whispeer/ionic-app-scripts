@@ -321,15 +321,22 @@ export function getUserConfigFile(context: BuildContext, task: TaskInfo, userCon
   }
 
   if (userConfigFile) {
-    return resolve(userConfigFile);
+    return [resolve(userConfigFile)];
   }
 
   const defaultConfig = getConfigValue(context, task.fullArg, task.shortArg, task.envVar, task.packageConfig, null);
+
   if (defaultConfig) {
-    return join(context.rootDir, defaultConfig);
+    if (Array.isArray(defaultConfig)) {
+      return defaultConfig.map((path) =>
+        join(context.rootDir, path)
+      );
+    }
+
+    return [join(context.rootDir, defaultConfig)];
   }
 
-  return null;
+  return [null];
 }
 
 

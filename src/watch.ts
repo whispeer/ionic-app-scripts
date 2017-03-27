@@ -16,7 +16,7 @@ import { BuildContext, BuildState, ChangedFile, TaskInfo } from './util/interfac
 // https://github.com/paulmillr/chokidar
 
 export function watch(context?: BuildContext, configFile?: string) {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
   // Override all build options if watch is ran.
   context.isProd = false;
@@ -36,9 +36,11 @@ export function watch(context?: BuildContext, configFile?: string) {
   const logger = new Logger('watch');
 
   function buildDone() {
-    return startWatchers(context, configFile).then(() => {
-      logger.ready();
-    });
+    return Promise.all(configFiles.map((configPath) => {
+      return startWatchers(context, configPath).then(() => {
+        logger.ready();
+      });
+    }));
   }
 
   return buildTask.build(context)

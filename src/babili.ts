@@ -7,11 +7,11 @@ import { Logger } from './logger/logger';
 
 export function babili(context: BuildContext, configFile?: string) {
 
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
   const logger = new Logger('babili - experimental');
 
-  return babiliWorker(context, configFile).then(() => {
+  return Promise.all(configFiles.map((configPath) => babiliWorker(context, configPath))).then(() => {
     logger.finish();
   })
   .catch(err => {

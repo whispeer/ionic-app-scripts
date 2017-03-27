@@ -13,38 +13,40 @@ import * as autoprefixer from 'autoprefixer';
 
 
 export function sass(context: BuildContext, configFile?: string) {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
   const logger = new Logger('sass');
 
-  return sassWorker(context, configFile)
-    .then(outFile => {
-      context.sassState = BuildState.SuccessfulBuild;
-      logger.finish();
-      return outFile;
-    })
-    .catch(err => {
-      context.sassState = BuildState.RequiresBuild;
-      throw logger.fail(err);
-    });
+  return Promise.all(configFiles.map((configPath) => {
+    return sassWorker(context, configPath);
+  })).then(outFile => {
+    context.sassState = BuildState.SuccessfulBuild;
+    logger.finish();
+    return outFile;
+  })
+  .catch(err => {
+    context.sassState = BuildState.RequiresBuild;
+    throw logger.fail(err);
+  });
 }
 
 
 export function sassUpdate(changedFiles: ChangedFile[], context: BuildContext) {
-  const configFile = getUserConfigFile(context, taskInfo, null);
+  const configFiles = getUserConfigFile(context, taskInfo, null);
 
   const logger = new Logger('sass update');
 
-  return sassWorker(context, configFile)
-    .then(outFile => {
-      context.sassState = BuildState.SuccessfulBuild;
-      logger.finish();
-      return outFile;
-    })
-    .catch(err => {
-      context.sassState = BuildState.RequiresBuild;
-      throw logger.fail(err);
-    });
+  return Promise.all(configFiles.map((configPath) => {
+    return sassWorker(context, configPath);
+  })).then(outFile => {
+    context.sassState = BuildState.SuccessfulBuild;
+    logger.finish();
+    return outFile;
+  })
+  .catch(err => {
+    context.sassState = BuildState.RequiresBuild;
+    throw logger.fail(err);
+  });
 }
 
 
@@ -88,7 +90,6 @@ export function sassWorker(context: BuildContext, configFile: string) {
 }
 
 export function getSassConfig(context: BuildContext, configFile: string): SassConfig {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
   return fillConfigDefaults(configFile, taskInfo.defaultConfigFile);
 }
 

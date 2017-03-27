@@ -10,36 +10,39 @@ import { BuildContext, BuildState, ChangedFile, TaskInfo } from './util/interfac
 
 
 export function rollup(context: BuildContext, configFile: string) {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
   const logger = new Logger('rollup');
 
-  return rollupWorker(context, configFile)
-    .then(() => {
-      context.bundleState = BuildState.SuccessfulBuild;
-      logger.finish();
-    })
-    .catch(err => {
-      context.bundleState = BuildState.RequiresBuild;
-      throw logger.fail(err);
-    });
+  return Promise.all(configFiles.map((configPath) => {
+    return rollupWorker(context, configPath);
+  })).then(() => {
+    context.bundleState = BuildState.SuccessfulBuild;
+    logger.finish();
+  })
+  .catch(err => {
+    context.bundleState = BuildState.RequiresBuild;
+    throw logger.fail(err);
+  });
 }
 
 
 export function rollupUpdate(changedFiles: ChangedFile[], context: BuildContext) {
   const logger = new Logger('rollup update');
 
-  const configFile = getUserConfigFile(context, taskInfo, null);
+  const configFiles = getUserConfigFile(context, taskInfo, null);
 
-  return rollupWorker(context, configFile)
-    .then(() => {
-      context.bundleState = BuildState.SuccessfulBuild;
-      logger.finish();
-    })
-    .catch(err => {
-      context.bundleState = BuildState.RequiresBuild;
-      throw logger.fail(err);
-    });
+  return Promise.all(configFiles.map((configPath) => {
+    return rollupWorker(context, configPath);
+  }))
+  .then(() => {
+    context.bundleState = BuildState.SuccessfulBuild;
+    logger.finish();
+  })
+  .catch(err => {
+    context.bundleState = BuildState.RequiresBuild;
+    throw logger.fail(err);
+  });
 }
 
 
@@ -134,7 +137,6 @@ function addRollupPluginIfNecessary(context: BuildContext, plugins: any[]) {
 
 
 export function getRollupConfig(context: BuildContext, configFile: string): RollupConfig {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
   return fillConfigDefaults(configFile, taskInfo.defaultConfigFile);
 }
 

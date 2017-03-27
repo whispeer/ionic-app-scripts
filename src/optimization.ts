@@ -132,9 +132,9 @@ function attemptToPurgeUnusedProvider(context: BuildContext, dependencyMap: Map<
 }
 
 export function getConfig(context: BuildContext, configFile: string): WebpackConfig {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
-  let webpackConfig: WebpackConfig = fillConfigDefaults(configFile, taskInfo.defaultConfigFile);
+  let webpackConfig: WebpackConfig = fillConfigDefaults(configFiles[0], taskInfo.defaultConfigFile);
   webpackConfig.entry = replacePathVars(context, webpackConfig.entry);
   webpackConfig.output.path = replacePathVars(context, webpackConfig.output.path);
 
@@ -148,5 +148,3 @@ const taskInfo: TaskInfo = {
   packageConfig: 'ionic_dependency_tree',
   defaultConfigFile: 'optimization.config'
 };
-
-

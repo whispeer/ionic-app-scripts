@@ -10,8 +10,11 @@ import { CleanCssConfig, getCleanCssInstance } from './util/clean-css-factory';
 
 export function cleancss(context: BuildContext, configFile?: string) {
   const logger = new Logger('cleancss');
-  configFile = getUserConfigFile(context, taskInfo, configFile);
-  return workerClient.runWorker('cleancss', 'cleancssWorker', context, configFile).then(() => {
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
+
+  return Promise.all(configFiles.map((configPath) => {
+    return workerClient.runWorker('cleancss', 'cleancssWorker', context, configPath);
+  })).then(() => {
     logger.finish();
   }).catch(err => {
     throw logger.fail(err);

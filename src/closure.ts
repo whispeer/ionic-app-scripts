@@ -10,17 +10,18 @@ import { runWorker } from './worker-client';
 
 
 export function closure(context: BuildContext, configFile?: string) {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
   const logger = new Logger('closure');
 
-  return runWorker('closure', 'closureWorker', context, configFile)
-    .then(() => {
-      logger.finish();
-    })
-    .catch(err => {
-      throw logger.fail(err);
-    });
+  return Promise.all(configFiles.map((configPath) => {
+    return runWorker('closure', 'closureWorker', context, configPath);
+  })).then(() => {
+    logger.finish();
+  })
+  .catch(err => {
+    throw logger.fail(err);
+  });
 }
 
 export function closureWorker(context: BuildContext, configFile: string): Promise<any> {
@@ -122,9 +123,9 @@ export function isClosureSupported(context: BuildContext): Promise<boolean> {
 }
 
 function getClosureConfig(context: BuildContext, configFile?: string): ClosureConfig {
-  configFile = getUserConfigFile(context, taskInfo, configFile);
+  const configFiles = getUserConfigFile(context, taskInfo, configFile);
 
-  return fillConfigDefaults(configFile, taskInfo.defaultConfigFile);
+  return fillConfigDefaults(configFiles[0], taskInfo.defaultConfigFile);
 }
 
 const taskInfo: TaskInfo = {

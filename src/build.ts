@@ -278,30 +278,34 @@ function buildUpdateTasks(changedFiles: ChangedFile[], context: BuildContext) {
       // SASS
       if (context.sassState === BuildState.RequiresUpdate) {
         // we need to do a sass update
-        return sassUpdate(changedFiles, context).then(outputCssFile => {
-          const changedFile: ChangedFile = {
-            event: Constants.FILE_CHANGE_EVENT,
-            ext: '.css',
-            filePath: outputCssFile
-          };
+        return sassUpdate(changedFiles, context).then(outputCssFiles => {
+          outputCssFiles.forEach((outputCssFile) => {
+            const changedFile: ChangedFile = {
+              event: Constants.FILE_CHANGE_EVENT,
+              ext: '.css',
+              filePath: outputCssFile
+            };
 
-          context.fileCache.set(outputCssFile, { path: outputCssFile, content: outputCssFile});
+            context.fileCache.set(outputCssFile, { path: outputCssFile, content: outputCssFile});
 
-          resolveValue.changedFiles.push(changedFile);
+            resolveValue.changedFiles.push(changedFile);
+          });
         });
 
       } else if (context.sassState === BuildState.RequiresBuild) {
         // we need to do a full sass build
-        return sass(context).then(outputCssFile => {
-          const changedFile: ChangedFile = {
-            event: Constants.FILE_CHANGE_EVENT,
-            ext: '.css',
-            filePath: outputCssFile
-          };
+        return sass(context).then(outputCssFiles => {
+          outputCssFiles.forEach((outputCssFile) => {
+            const changedFile: ChangedFile = {
+              event: Constants.FILE_CHANGE_EVENT,
+              ext: '.css',
+              filePath: outputCssFile
+            };
 
-          context.fileCache.set(outputCssFile, { path: outputCssFile, content: outputCssFile});
+            context.fileCache.set(outputCssFile, { path: outputCssFile, content: outputCssFile});
 
-          resolveValue.changedFiles.push(changedFile);
+            resolveValue.changedFiles.push(changedFile);
+          });
         });
       }
       // no sass build required
